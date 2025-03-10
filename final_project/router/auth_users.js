@@ -41,8 +41,51 @@ regd_users.post("/login", (req,res) => {
 
 // Add a book review
 regd_users.put("/auth/review/:isbn", (req, res) => {
-  //Write your code here
-  return res.status(300).json({message: "Yet to be implemented"});
+    const sessionAuth = req.session.authorization;
+    const {username} = sessionAuth;
+
+    const isbn = req.params.isbn;
+
+    const reviewBody = req.body.review.trim();
+
+    if (!reviewBody)
+        return res.status(404).json({message: "Cannot add an empty review"});
+
+    const book = books[isbn];
+
+    if (!book)
+        return res.status(404).json({message: `Failed to find book with isbn ${isbn}`});
+
+    const reviews = book.reviews;
+    let message = "";
+    if (!reviews[username])
+        message = "Review added";
+    else
+        message = "Review updated";
+
+    reviews[username] = reviewBody;
+
+    return res.status(200).json({message});
+});
+
+regd_users.delete("/auth/review/:isbn", (req, res) => {
+    const sessionAuth = req.session.authorization;
+    const {username} = sessionAuth;
+
+    const isbn = req.params.isbn;
+
+    const book = books[isbn];
+
+    if (!book)
+        return res.status(404).json({message: `Failed to find book with isbn ${isbn}`});
+
+    const reviews = book.reviews;
+    if (!reviews[username])
+        return res.status(404).json({message: "Cannot delete user review as there is no review from this user on this book"});
+
+    delete reviews[username];
+
+    return res.status(200).json({message: "Deleted user review"});
 });
 
 module.exports.authenticated = regd_users;
